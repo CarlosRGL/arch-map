@@ -1,15 +1,17 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   ReactFlow, ReactFlowProvider, Background, BackgroundVariant, Controls, MiniMap,
-  Handle, Position, MarkerType, useReactFlow, type Node, type Edge, type NodeProps,
+  Handle, Position, MarkerType, BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useReactFlow,
+  type Node, type Edge, type NodeProps, type EdgeProps,
 } from '@xyflow/react'
-import { ChevronLeft, ChevronRight, FileCode2, Play, X, CheckCircle2, Sun, Moon } from 'lucide-react'
+import { ArrowRight, ChevronLeft, ChevronRight, FileCode2, Play, X, CheckCircle2, Sun, Moon } from 'lucide-react'
 import type { Architecture, Component, Kind } from './types'
 import { KIND_ICON, KIND_COLOR, TINT, soft } from './theme'
 import { layout, NODE_H, NODE_W } from './layout'
 
 type CompData = { comp: Component; dim: boolean; active: boolean }
 type GroupData = { label: string; color: string; count: number; dim: boolean }
+type HopData = { label?: string; n?: number; lit: boolean }
 
 function KindTile({ kind, size = 34 }: { kind: Kind; size?: number }) {
   const Icon = KIND_ICON[kind]
@@ -27,26 +29,26 @@ function KindTile({ kind, size = 34 }: { kind: Kind; size?: number }) {
 function CompNode({ data, selected }: NodeProps<Node<CompData>>) {
   const { comp, dim, active } = data
   const lit = active || selected
+  const Icon = KIND_ICON[comp.kind]
+  const color = KIND_COLOR[comp.kind]
+  const handle = '!h-1.5 !w-1.5 !border-0 !bg-transparent'
   return (
     <div
-      className={`node flex items-center gap-2.5 rounded-lg bg-card px-2.5 ${dim ? 'node-dim' : ''}`}
+      className={`node relative flex items-center gap-2.5 overflow-hidden rounded-lg bg-card pl-4 pr-2.5 ${dim ? 'node-dim' : ''}`}
       style={{
         width: NODE_W, height: NODE_H,
-        boxShadow: lit
-          ? '0 0 0 1.5px var(--primary), 0 8px 24px -8px var(--primary-line)'
-          : 'var(--elevation-card)',
+        boxShadow: lit ? '0 0 0 1.5px var(--primary), 0 8px 24px -8px var(--primary-line)' : 'var(--elevation-card)',
       }}
     >
-      <Handle id="l" type="target" position={Position.Left} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
-      <Handle id="r" type="source" position={Position.Right} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
-      <Handle id="t" type="target" position={Position.Top} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
-      <Handle id="b" type="source" position={Position.Bottom} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
-      <KindTile kind={comp.kind} />
+      <Handle id="l" type="target" position={Position.Left} className={handle} />
+      <Handle id="r" type="source" position={Position.Right} className={handle} />
+      <Handle id="t" type="target" position={Position.Top} className={handle} />
+      <Handle id="b" type="source" position={Position.Bottom} className={handle} />
+      <span className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />
+      <Icon size={17} strokeWidth={2} style={{ color }} className="shrink-0" />
       <div className="min-w-0">
         <div className="truncate text-[13px] font-semibold leading-tight text-foreground">{comp.label}</div>
-        <div className="truncate text-[10.5px] leading-tight text-fg-3">
-          {comp.kind[0].toUpperCase() + comp.kind.slice(1)}{comp.tech ? ` · ${comp.tech}` : ''}
-        </div>
+        <div className="truncate font-mono text-[10px] uppercase leading-tight tracking-wide text-fg-4">{comp.tech ?? comp.kind}</div>
       </div>
     </div>
   )
@@ -55,19 +57,47 @@ function CompNode({ data, selected }: NodeProps<Node<CompData>>) {
 function GroupNode({ data }: NodeProps<Node<GroupData>>) {
   return (
     <div
-      className={`node h-full w-full rounded-2xl border ${data.dim ? 'node-dim' : ''}`}
-      style={{ background: soft(data.color, 6), borderColor: soft(data.color, 26) }}
+      className={`node relative h-full w-full rounded-2xl border border-dashed ${data.dim ? 'node-dim' : ''}`}
+      style={{ background: soft(data.color, 4), borderColor: soft(data.color, 40) }}
     >
-      <div className="flex items-center gap-1.5 px-4 pt-3 text-[10.5px] font-bold uppercase tracking-[0.12em]" style={{ color: data.color }}>
+      <div
+        className="absolute -top-3 left-4 flex items-center gap-1.5 rounded-full bg-card px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.1em] shadow-card"
+        style={{ color: data.color }}
+      >
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: data.color }} />
         {data.label}
-        <span className="font-semibold opacity-60">{data.count}</span>
+        <span className="font-semibold text-fg-4">{data.count}</span>
       </div>
     </div>
   )
 }
 
+function HopEdge(p: EdgeProps<Edge<HopData>>) {
+  const [path, lx, ly] = getSmoothStepPath({
+    sourceX: p.sourceX, sourceY: p.sourceY, sourcePosition: p.sourcePosition,
+    targetX: p.targetX, targetY: p.targetY, targetPosition: p.targetPosition, borderRadius: 14,
+  })
+  const d = p.data!
+  return (
+    <>
+      <BaseEdge id={p.id} path={path} markerEnd={p.markerEnd} style={p.style} className={d.lit ? 'edge-flow' : ''} />
+      {d.lit && (d.label || d.n) && (
+        <EdgeLabelRenderer>
+          <div
+            className="nodrag nopan pointer-events-none absolute z-30 flex items-center gap-1 rounded-full bg-card py-0.5 pr-2 text-[11px] font-medium text-fg-2 shadow-pop"
+            style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`, paddingLeft: d.n ? 2 : 8 }}
+          >
+            {d.n && <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{d.n}</span>}
+            {d.label}
+          </div>
+        </EdgeLabelRenderer>
+      )}
+    </>
+  )
+}
+
 const nodeTypes = { comp: CompNode, cluster: GroupNode }
+const edgeTypes = { hop: HopEdge }
 
 function Viewer({ arch }: { arch: Architecture }) {
   const rf = useReactFlow()
@@ -85,21 +115,26 @@ function Viewer({ arch }: { arch: Architecture }) {
   const groupById = useMemo(() => new Map(arch.groups.map((g) => [g.id, g])), [arch])
   const lay = useMemo(() => layout(arch), [arch])
 
+  const connById = useMemo(() => new Map(arch.connections.map((c) => [c.id, c])), [arch])
+  // The hops of the current step, in the order they are listed in the file: the map numbers them 1, 2, 3.
+  const hops = useMemo(() => {
+    if (step === null) return []
+    return (arch.tour[step].connections ?? []).map((id) => connById.get(id)).filter((c) => !!c)
+  }, [step, arch, connById])
+
   // What is lit right now: a tour step, or a selected component and its neighbours.
   const hl = useMemo(() => {
-    const comps = new Set<string>(), conns = new Set<string>()
+    const comps = new Set<string>(), conns = new Map<string, number | undefined>()
     if (step !== null && arch.tour[step]) {
       arch.tour[step].components.forEach((c) => comps.add(c))
-      arch.tour[step].connections?.forEach((c) => conns.add(c))
-      // a step lists connections: make sure their endpoints are lit too
-      arch.connections.filter((c) => conns.has(c.id)).forEach((c) => { comps.add(c.source); comps.add(c.target) })
+      hops.forEach((c, i) => { conns.set(c.id, i + 1); comps.add(c.source); comps.add(c.target) })
     } else if (selected) {
       comps.add(selected)
       arch.connections.filter((c) => c.source === selected || c.target === selected)
-        .forEach((c) => { conns.add(c.id); comps.add(c.source); comps.add(c.target) })
+        .forEach((c) => { conns.set(c.id, undefined); comps.add(c.source); comps.add(c.target) })
     }
     return { comps, conns, on: comps.size > 0 }
-  }, [step, selected, arch])
+  }, [step, selected, arch, hops])
 
   const nodes = useMemo<Node[]>(() => {
     const out: Node[] = lay.boxes.map((b) => {
@@ -131,15 +166,12 @@ function Viewer({ arch }: { arch: Architecture }) {
       const lit = hl.conns.has(c.id)
       const color = lit ? 'var(--primary)' : 'var(--border-strong)'
       return {
-        id: c.id, source: c.source, target: c.target, zIndex: lit ? 10 : 1,
+        id: c.id, source: c.source, target: c.target, type: 'hop', zIndex: lit ? 10 : 1,
         sourceHandle: sameGroup ? (down ? 'b' : 't') : 'r',
         targetHandle: sameGroup ? (down ? 't' : 'b') : 'l',
-        label: lit ? c.label : undefined,
-        className: lit ? 'edge-flow' : '',
+        data: { label: c.label, n: hl.conns.get(c.id), lit } satisfies HopData,
         markerEnd: { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
-        style: { stroke: color, strokeWidth: lit ? 2 : 1.4, opacity: hl.on && !lit ? 0.25 : 1 },
-        labelStyle: { fill: 'var(--fg-2)' }, labelBgPadding: [6, 3] as [number, number], labelBgBorderRadius: 5,
-        labelBgStyle: { fill: 'var(--card)', stroke: 'var(--border-strong)' },
+        style: { stroke: color, strokeWidth: lit ? 2 : 1.3, opacity: hl.on && !lit ? 0.2 : 0.85 },
       }
     })
   }, [arch, byId, hl])
@@ -155,9 +187,9 @@ function Viewer({ arch }: { arch: Architecture }) {
     if (i === null) { rf.fitView({ padding: 0.15, duration: 600 }); return }
     const s = arch.tour[i]
     const ids = new Set(s.components)
-    arch.connections.filter((c) => s.connections?.includes(c.id)).forEach((c) => { ids.add(c.source); ids.add(c.target) })
+    s.connections?.forEach((id) => { const c = connById.get(id); if (c) { ids.add(c.source); ids.add(c.target) } })
     focus([...ids])
-  }, [arch, rf, focus])
+  }, [arch, rf, focus, connById])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -177,7 +209,7 @@ function Viewer({ arch }: { arch: Architecture }) {
     <div className="flex h-full w-full">
       <div className="relative min-w-0 flex-1">
         <ReactFlow
-          nodes={nodes} edges={edges} nodeTypes={nodeTypes}
+          nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
           fitView fitViewOptions={{ padding: 0.15 }} minZoom={0.15} maxZoom={1.6}
           nodesConnectable={false} colorMode={dark ? 'dark' : 'light'} proOptions={{ hideAttribution: true }}
           onNodeClick={(_, n) => { if (n.type === 'comp') { setStep(null); setSelected(n.id) } }}
@@ -190,7 +222,7 @@ function Viewer({ arch }: { arch: Architecture }) {
         </ReactFlow>
 
         {step !== null && (
-          <div className="pointer-events-auto absolute left-1/2 top-4 z-20 w-[460px] max-w-[92%] -translate-x-1/2 rounded-xl bg-card/95 p-4 shadow-pop backdrop-blur">
+          <div className="pointer-events-auto absolute left-1/2 top-4 z-20 w-[500px] max-w-[92%] -translate-x-1/2 rounded-xl bg-card/95 p-4 shadow-pop backdrop-blur">
             <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.14em] text-fg-3">
               <span>How it works · {step + 1} of {arch.tour.length}</span>
               <div className="flex items-center gap-1.5">
@@ -203,13 +235,27 @@ function Viewer({ arch }: { arch: Architecture }) {
             </div>
             <div className="text-[15px] font-semibold text-foreground">{arch.tour[step].title}</div>
             <p className="mt-1 text-[12.5px] leading-relaxed text-fg-2">{arch.tour[step].description}</p>
-            <div className="mt-3 flex flex-wrap gap-1.5">
-              {arch.tour[step].components.map((id) => byId.get(id) && (
-                <span key={id} className="flex items-center gap-1 rounded-md bg-surface-3 px-1.5 py-0.5 text-[11px] text-fg-2">
-                  <KindTile kind={byId.get(id)!.kind} size={14} />{byId.get(id)!.label}
-                </span>
-              ))}
-            </div>
+            {hops.length > 0 ? (
+              <ol className="mt-3 max-h-44 space-y-1 overflow-y-auto pr-1">
+                {hops.map((c, i) => (
+                  <li key={c.id} className="flex items-center gap-2 text-xs">
+                    <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{i + 1}</span>
+                    <span className="truncate text-foreground">{byId.get(c.source)?.label}</span>
+                    <ArrowRight size={11} className="shrink-0 text-fg-4" />
+                    <span className="truncate text-foreground">{byId.get(c.target)?.label}</span>
+                    {c.label && <span className="truncate text-fg-4">{c.label}</span>}
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <div className="mt-3 flex flex-wrap gap-1.5">
+                {arch.tour[step].components.map((id) => byId.get(id) && (
+                  <span key={id} className="flex items-center gap-1 rounded-md bg-surface-3 px-1.5 py-0.5 text-[11px] text-fg-2">
+                    <KindTile kind={byId.get(id)!.kind} size={14} />{byId.get(id)!.label}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="mt-3 flex items-center justify-between">
               <button disabled={step === 0} onClick={() => goStep(step - 1)}
                 className="flex items-center gap-1 rounded-md border border-border-strong px-3 py-1.5 text-xs text-fg-2 hover:bg-accent disabled:opacity-30">

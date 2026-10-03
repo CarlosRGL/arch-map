@@ -55,7 +55,7 @@ Run it again later: if `.arch/architecture.json` exists the agent diffs against 
 ## What the viewer does
 
 - Components grouped by layer, with an icon per kind: `user`, `ui`, `api`, `service`, `worker`, `cli`, `database`, `storage`, `external`, `config`.
-- **How it works**: a numbered tour. Each step highlights the components and animates the connections of one flow, everything else dims. Keyboard: `←` `→` to move, `Esc` to close.
+- **How it works**: a guided tour. Each step highlights the components of one flow and animates its connections, everything else dims. The hops are **numbered 1, 2, 3…** on the map and listed in the step card, so you can read the sequence. Keyboard: `←` `→` to move, `Esc` to close.
 - Click a component for its role, its in and out connections and its source files.
 - Minimap, pan and zoom, light and dark mode (follows your system, toggle in the sidebar).
 - Styled with the [@crdg loniar theme](https://crdg-registry.vercel.app): Geist, one indigo accent, dense type scale.

@@ -19,7 +19,7 @@ You write `.arch/architecture.json`; a prebuilt viewer (React Flow, dark UI) ren
 
 3. **Decide the model.** Follow `references/schema.md` for sizes and rules. Components are things with a role at runtime (UI, API, service, job, store, external system, actor), not files or classes. Group them by layer or domain (4-8 groups). Connections are initiated calls or data pushes (label = short lowercase verb phrase). Add actors (`user`, an AI agent, cron) so flows have a start. Done when every component has exactly one group and at least one connection.
 
-4. **Write the tour.** 4-7 steps, one user-visible flow each, ordered for a newcomer: first the thing the main user does, last the safety nets (tests, backups, error paths). Each step names the components and connections it lights up: at most 8 components, only the ones that act in that flow. Descriptions are plain language, 1-3 sentences, and say what happens and why, not which function.
+4. **Write the tour.** 4-7 steps, one user-visible flow each, ordered for a newcomer: first the thing the main user does, last the safety nets (tests, backups, error paths). Each step names the components and connections it lights up, connections in the order they happen (the viewer numbers them): at most 8 components, only the ones that act in that flow. Descriptions are plain language, 1-3 sentences, and say what happens and why, not which function.
 
 5. **Verify against the code.** Every path in `files` must exist (`test -e`). Every connection must exist in the code: a call, query, HTTP request, hook, or schedule you actually saw. Drop or fix anything you inferred without evidence.
 

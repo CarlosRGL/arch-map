@@ -57,5 +57,5 @@ Each kind gets its own icon and tint in the viewer.
 - Connections follow real runtime relations (calls, reads, writes, renders, schedules, sends to),
   not imports. Direction is the direction of the initiating call or data push.
 - 4-7 tour steps, each telling one user-visible flow end to end with at most 8 components (a step that lights up half the map teaches nothing), in the order a newcomer
-  should learn them. Every component and connection id referenced must exist.
+  should learn them. Every component and connection id referenced must exist. List a step's `connections` in the order they happen: the viewer numbers them 1, 2, 3 on the map and in the step card.
 - Add the actors as components of kind `user` (the person, an AI agent, a cron) so flows have a start.
