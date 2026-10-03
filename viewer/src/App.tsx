@@ -37,8 +37,8 @@ function CompNode({ data, selected }: NodeProps<Node<CompData>>) {
       className={`node relative flex items-center gap-2.5 rounded-lg px-3 pr-2.5 ${dim ? 'node-dim' : ''}`}
       style={{
         width: NODE_W, height: NODE_H,
-        // no outline: the kind colour washes the card, the icon carries the saturated tone
-        background: `color-mix(in srgb, ${color} 7%, var(--card))`,
+        // neutral card, no outline: only the icon carries the kind colour
+        background: 'var(--card)',
         boxShadow: lit
           ? '0 0 0 1.5px var(--primary), 0 8px 24px -8px var(--primary-line)'
           : '0 1px 2px rgb(20 22 40 / 0.08), 0 6px 14px -8px rgb(20 22 40 / 0.22)',
@@ -60,12 +60,12 @@ function CompNode({ data, selected }: NodeProps<Node<CompData>>) {
 function GroupNode({ data }: NodeProps<Node<GroupData>>) {
   return (
     <div
-      className={`node relative h-full w-full rounded-2xl border border-dashed ${data.dim ? 'node-dim' : ''}`}
-      style={{ background: soft(data.color, 4), borderColor: soft(data.color, 40) }}
+      className={`node relative h-full w-full rounded-2xl ${data.dim ? 'node-dim' : ''}`}
+      style={{ background: soft(data.color, 7) }}
     >
       <div
-        className="absolute -top-3 left-4 flex items-center gap-1.5 rounded-full bg-card px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.1em] shadow-card"
-        style={{ color: data.color }}
+        className="absolute -top-3 left-4 flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10.5px] font-bold uppercase tracking-[0.1em]"
+        style={{ color: data.color, background: `color-mix(in srgb, ${data.color} 14%, var(--background))` }}
       >
         <span className="h-1.5 w-1.5 rounded-full" style={{ background: data.color }} />
         {data.label}
