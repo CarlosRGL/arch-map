@@ -35,7 +35,8 @@ The viewer renders exactly this file. Write it to `<project>/.arch/architecture.
       "title": "A member books a class",      // user-facing step title
       "description": "What happens, in plain words. 1-3 sentences.",
       "components": ["portal-planning", "booking-service"],  // highlighted nodes
-      "connections": ["c1", "c4"]                            // highlighted edges (animated)
+      "connections": ["c1", "c4"],                           // highlighted edges (animated)
+      "narration": "Spoken version of this step."            // optional; only used by the video mode, falls back to description
     }
   ]
 }

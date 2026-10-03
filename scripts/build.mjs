@@ -42,6 +42,7 @@ arch.connections.forEach((c) => {
 })
 arch.tour.forEach((s, i) => {
   if (!s.title || !s.description) err(`tour step ${i + 1}: title and description are required`)
+  if (s.narration != null && typeof s.narration !== 'string') err(`tour step ${i + 1}: narration must be a string`)
   ;(s.components ?? []).forEach((id) => { if (!comps.has(id)) err(`tour step ${i + 1}: unknown component "${id}"`) })
   ;(s.connections ?? []).forEach((id) => { if (!conns.has(id)) err(`tour step ${i + 1}: unknown connection "${id}"`) })
 })

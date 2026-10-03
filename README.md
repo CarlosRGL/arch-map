@@ -52,6 +52,15 @@ Run it again later: if `.arch/architecture.json` exists the agent diffs against 
 
 `.arch/` is not added to `.gitignore`. Commit it if you want the map in the repo, ignore it if you don't.
 
+## Options
+
+Ask for them in the same sentence: "map the architecture, explain it in simple English".
+
+- **`ste`**: the agent writes every description in a controlled, simplified English modelled on [ASD-STE100](https://www.asd-ste100.org/) (short sentences, active voice, one word per meaning). Aimed at "80% of the way" so it stays readable; ask for `strict` to follow the spec fully.
+- **`video`**: adds a spoken `narration` to each tour step and writes `.arch/narration.md` and `.arch/narration.json` (one scene per step, with the on-screen components and numbered hops). The agent can then render a narrated explainer video from it, with the TTS you choose. The script alone is cheap; the render takes time.
+
+The idea comes from Andrej Karpathy's [ladder for understanding model output](https://x.com/karpathy/status/2105819303471976479): controlled writing, then diagrams, then web pages, then explainer videos. The map covers the middle two; these options cover the ends. Details in [`references/explain.md`](references/explain.md).
+
 ## What the viewer does
 
 - Components grouped by layer, with an icon per kind: `user`, `ui`, `api`, `service`, `worker`, `cli`, `database`, `storage`, `external`, `config`.
@@ -79,6 +88,8 @@ The script validates ids, references, kinds and colors before it writes anything
 SKILL.md              the procedure the agent follows
 references/schema.md  architecture.json schema and sizing rules
 scripts/build.mjs     validate + inject the JSON into the viewer
+scripts/narration.mjs tour -> narration script and scene data (video mode)
+references/explain.md ste and video options
 assets/viewer.html    prebuilt viewer (generated, committed)
 viewer/               viewer source: Vite, React, @xyflow/react, dagre, Tailwind v4
 examples/             demo.json and the built demo.html

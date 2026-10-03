@@ -1,6 +1,6 @@
 ---
 name: arch-map
-description: Use for "map the architecture", "arch map", "show how this app works", "visualize the codebase", "explain the flow of the app". Produces an interactive architecture view (.arch/index.html) with a guided tour.
+description: Use for "map the architecture", "arch map", "show how this app works", "visualize the codebase", "explain the flow of the app", "explain it in simple English" or "make an explainer video". Produces an interactive architecture view (.arch/index.html) with a guided tour; optional plain-English (STE) and video-script modes.
 ---
 
 # Arch map
@@ -10,6 +10,15 @@ description: Use for "map the architecture", "arch map", "show how this app work
 Turn the current project into an interactive architecture diagram: grouped components, real runtime connections, and a "How it works" tour that walks through the main user-visible flows. Output is one self-contained HTML file; nothing gets installed in the project.
 
 You write `.arch/architecture.json`; a prebuilt viewer (React Flow, dark UI) renders it. The viewer is `assets/viewer.html` (styled with the @crdg loniar theme, light and dark), its source is in `viewer/`.
+
+## Options
+
+Read `references/explain.md` only when the user asks for one of these:
+
+- `ste`: write all text in controlled, simplified English (ASD-STE100 style, "80% of the way" unless the user says strict). Applies to steps 3 and 4: write the descriptions that way from the start.
+- `video`: also produce a narration script and, if wanted, a narrated explainer video of the tour (step 9).
+
+With no option, nothing changes.
 
 ## Steps
 
@@ -34,6 +43,8 @@ You write `.arch/architecture.json`; a prebuilt viewer (React Flow, dark UI) ren
 7. **Look at it.** Open `.arch/index.html` with `agent-browser` (`file://` URL), take a screenshot, and check: nodes do not overlap, group labels are readable, the tour step 1 highlights something sensible. Fix the JSON, not the viewer, unless the viewer is actually broken.
 
 8. **Report** the path (`open .arch/index.html`), the counts, and the 2-3 things you were least sure about. Do not edit `.gitignore`; say that `.arch/` is untracked and let the user decide whether to commit it.
+
+9. **Video (only with `video`).** Add a `narration` to each tour step, rebuild, run `node <skill-dir>/scripts/narration.mjs .arch/architecture.json`, and follow `references/explain.md` to turn `.arch/narration.json` into a video.
 
 ## Editing the viewer
 
