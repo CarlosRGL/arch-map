@@ -19,6 +19,14 @@ Rules:
 
 Check before building: read each description aloud. A non-native reader must parse it in one pass. Split any sentence that holds two verbs about different subjects.
 
+### Other languages
+
+ASD-STE100 only exists for English. In another language, apply the same rules with that language's plain-language standard:
+- French: FALC (Facile à lire et à comprendre). Short sentences, one idea each, active voice, common words, no figurative language, define each technical term once.
+- Spanish: Lectura Fácil. Same principles: short sentences, direct vocabulary, no ambiguity, one term per concept.
+
+Set `"lang"` in the JSON to match, and keep terms identical across the whole map.
+
 ## `video`: explainer from the tour
 
 Goal: a narrated walkthrough that follows the tour, one scene per step. The agent does the creative work; the script only prepares the material.
@@ -26,7 +34,7 @@ Goal: a narrated walkthrough that follows the tour, one scene per step. The agen
 1. Write a `narration` string on each tour step (optional field, see `schema.md`). It is spoken, so: short sentences, no file names, no parentheses, numbers spelled the way they are read. Without it the step `description` is used. Combine with `ste` for the clearest result.
 2. Run `node <skill-dir>/scripts/narration.mjs .arch/architecture.json`. It writes `.arch/narration.md` (readable script) and `.arch/narration.json` (scenes: title, narration, on-screen components, numbered hops).
 3. Build the video from `narration.json`, one scene per entry. Use the `remotion-best-practices` skill when it is installed. Show the components of the scene as nodes, draw each hop in order with its number and label, and keep the scene on screen as long as its narration lasts. Keep it in `.arch/video/`, outside the project's own source.
-4. Audio: use the TTS the user names (for example ElevenLabs, with a key the user supplies). If none, use a free local option (macOS `say`, Piper) and tell the user which one you used. Never invent or hardcode a key.
+4. Audio: use a voice in the map's language (`lang`). Use the TTS the user names (for example ElevenLabs, with a key the user supplies). If none, use a free local option (macOS `say`, Piper) and tell the user which one you used. Never invent or hardcode a key.
 5. Verify: render, extract one frame per scene, and check that no text is cut off and the narration length matches the scene length. Report the output path.
 
 Ask once if the user wants only the script or the full video. The script alone is always cheap; a render takes real time.

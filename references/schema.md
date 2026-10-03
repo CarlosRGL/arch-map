@@ -6,6 +6,7 @@ The viewer renders exactly this file. Write it to `<project>/.arch/architecture.
 {
   "title": "NoteRepo",                       // project name
   "description": "One or two sentences: what the app does, for whom.",
+  "lang": "en",                               // optional: "en" (default), "fr", "es". Sets the viewer's buttons and labels; you write the content in the same language
   "commit": "1b640ff",                        // short git hash at analysis time (optional)
   "generatedAt": "2026-10-03T15:00:00Z",      // ISO date
   "groups": [

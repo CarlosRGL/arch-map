@@ -59,6 +59,8 @@ Ask for them in the same sentence: "map the architecture, explain it in simple E
 - **`ste`**: the agent writes every description in a controlled, simplified English modelled on [ASD-STE100](https://www.asd-ste100.org/) (short sentences, active voice, one word per meaning). Aimed at "80% of the way" so it stays readable; ask for `strict` to follow the spec fully.
 - **`video`**: adds a spoken `narration` to each tour step and writes `.arch/narration.md` and `.arch/narration.json` (one scene per step, with the on-screen components and numbered hops). The agent can then render a narrated explainer video from it, with the TTS you choose. The script alone is cheap; the render takes time.
 
+- **`lang`**: write the map in French, Spanish or English. The agent writes all content in your language and sets `"lang"` in the JSON; the viewer's buttons and labels follow (`en`, `fr`, `es`, other codes fall back to English). Combine freely: `ste` in French uses the FALC plain-language rules, in Spanish Lectura Fácil. Try [`examples/demo.fr.html`](examples/demo.fr.html).
+
 The idea comes from Andrej Karpathy's [ladder for understanding model output](https://x.com/karpathy/status/2105819303471976479): controlled writing, then diagrams, then web pages, then explainer videos. The map covers the middle two; these options cover the ends. Details in [`references/explain.md`](references/explain.md).
 
 ## What the viewer does

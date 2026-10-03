@@ -8,6 +8,7 @@ import { ArrowRight, ChevronLeft, ChevronRight, FileCode2, Play, X, CheckCircle2
 import type { Architecture, Component, Kind } from './types'
 import { KIND_ICON, KIND_COLOR, TINT, soft } from './theme'
 import { layout, NODE_H, NODE_W } from './layout'
+import { T, kindLabel } from './i18n'
 
 type CompData = { comp: Component; dim: boolean; active: boolean }
 type GroupData = { label: string; color: string; count: number; dim: boolean }
@@ -51,7 +52,7 @@ function CompNode({ data, selected }: NodeProps<Node<CompData>>) {
       <Icon size={17} strokeWidth={2} style={{ color }} className="shrink-0" />
       <div className="min-w-0">
         <div className="truncate text-[13px] font-semibold leading-tight text-foreground">{comp.label}</div>
-        <div className="truncate font-mono text-[10px] uppercase leading-tight tracking-wide text-fg-4">{comp.tech ?? comp.kind}</div>
+        <div className="truncate font-mono text-[10px] uppercase leading-tight tracking-wide text-fg-4">{comp.tech ?? kindLabel(comp.kind)}</div>
       </div>
     </div>
   )
@@ -227,13 +228,13 @@ function Viewer({ arch }: { arch: Architecture }) {
         {step !== null && (
           <div className="pointer-events-auto absolute left-1/2 top-4 z-20 w-[500px] max-w-[92%] -translate-x-1/2 rounded-xl bg-card/95 p-4 shadow-pop backdrop-blur">
             <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.14em] text-fg-3">
-              <span>How it works · {step + 1} of {arch.tour.length}</span>
+              <span>{T.howItWorks} · {T.stepOf(step + 1, arch.tour.length)}</span>
               <div className="flex items-center gap-1.5">
                 {arch.tour.map((_, i) => (
-                  <button key={i} aria-label={`Step ${i + 1}`} onClick={() => goStep(i)}
+                  <button key={i} aria-label={`${T.step} ${i + 1}`} onClick={() => goStep(i)}
                     className={`h-1.5 rounded-full transition-all ${i === step ? 'w-5 bg-primary' : 'w-1.5 bg-border-strong hover:bg-fg-4'}`} />
                 ))}
-                <button aria-label="End tour" onClick={() => goStep(null)} className="ml-2 text-fg-3 hover:text-foreground"><X size={14} /></button>
+                <button aria-label={T.endTour} onClick={() => goStep(null)} className="ml-2 text-fg-3 hover:text-foreground"><X size={14} /></button>
               </div>
             </div>
             <div className="text-[15px] font-semibold text-foreground">{arch.tour[step].title}</div>
@@ -262,15 +263,15 @@ function Viewer({ arch }: { arch: Architecture }) {
             <div className="mt-3 flex items-center justify-between">
               <button disabled={step === 0} onClick={() => goStep(step - 1)}
                 className="flex items-center gap-1 rounded-md border border-border-strong px-3 py-1.5 text-xs text-fg-2 hover:bg-accent disabled:opacity-30">
-                <ChevronLeft size={14} />Back
+                <ChevronLeft size={14} />{T.back}
               </button>
-              <span className="text-[10.5px] text-fg-4">← → to move · Esc to close</span>
+              <span className="text-[10.5px] text-fg-4">{T.keys}</span>
               {step < arch.tour.length - 1 ? (
                 <button onClick={() => goStep(step + 1)} className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
-                  Next<ChevronRight size={14} />
+                  {T.next}<ChevronRight size={14} />
                 </button>
               ) : (
-                <button onClick={() => goStep(null)} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">Done</button>
+                <button onClick={() => goStep(null)} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">{T.done}</button>
               )}
             </div>
           </div>
@@ -281,19 +282,19 @@ function Viewer({ arch }: { arch: Architecture }) {
         {sel ? (
           <div>
             <button onClick={() => setSelected(null)} className="mb-4 flex items-center gap-1 text-xs text-fg-3 hover:text-foreground">
-              <ChevronLeft size={14} />Back to overview
+              <ChevronLeft size={14} />{T.backToOverview}
             </button>
             <div className="flex items-center gap-3">
               <KindTile kind={sel.kind} size={42} />
               <div>
                 <div className="text-lg font-semibold text-foreground">{sel.label}</div>
-                <div className="text-xs text-fg-3">{sel.kind}{sel.tech ? ` · ${sel.tech}` : ''} · {groupById.get(sel.group)?.label}</div>
+                <div className="text-xs text-fg-3">{kindLabel(sel.kind)}{sel.tech ? ` · ${sel.tech}` : ''} · {groupById.get(sel.group)?.label}</div>
               </div>
             </div>
             <p className="mt-4 text-[13px] leading-relaxed text-fg-2">{sel.description}</p>
             {selConns.length > 0 && (
               <>
-                <h3 className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">Connections</h3>
+                <h3 className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">{T.connections}</h3>
                 <ul className="space-y-1.5">
                   {selConns.map((c) => {
                     const out = c.source === sel.id
@@ -314,7 +315,7 @@ function Viewer({ arch }: { arch: Architecture }) {
             )}
             {sel.files && sel.files.length > 0 && (
               <>
-                <h3 className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">Files</h3>
+                <h3 className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">{T.files}</h3>
                 <ul className="space-y-1">
                   {sel.files.map((f) => (
                     <li key={f} className="flex items-start gap-1.5 break-all font-mono text-[11px] text-fg-3">
@@ -329,21 +330,21 @@ function Viewer({ arch }: { arch: Architecture }) {
           <>
             <div className="flex items-start justify-between gap-3">
               <h1 className="text-xl font-semibold tracking-tight text-foreground">{arch.title}</h1>
-              <button onClick={toggleTheme} aria-label="Toggle light and dark mode"
+              <button onClick={toggleTheme} aria-label={T.toggleTheme}
                 className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-fg-3 shadow-card hover:bg-accent hover:text-foreground">
                 {dark ? <Sun size={14} /> : <Moon size={14} />}
               </button>
             </div>
             <p className="mt-2 text-[13px] leading-relaxed text-fg-2">{arch.description}</p>
             <p className="mt-3 text-xs text-fg-4">
-              {arch.components.length} components · {arch.connections.length} connections · {arch.groups.length} groups
+              {T.counts(arch.components.length, arch.connections.length, arch.groups.length)}
             </p>
 
             <div className="mb-3 mt-7 flex items-center justify-between">
-              <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">How it works</h2>
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">{T.howItWorks}</h2>
               <button onClick={() => goStep(step === null ? 0 : null)}
                 className="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground hover:opacity-90">
-                {step === null ? <><Play size={11} />Start tour</> : <>End tour</>}
+                {step === null ? <><Play size={11} />{T.startTour}</> : <>{T.endTour}</>}
               </button>
             </div>
             <ol className="space-y-2">
@@ -365,13 +366,13 @@ function Viewer({ arch }: { arch: Architecture }) {
                 </li>
               ))}
             </ol>
-            <p className="mt-4 text-[11px] text-fg-4">Click any component on the canvas to see its role.</p>
+            <p className="mt-4 text-[11px] text-fg-4">{T.hint}</p>
 
             <div className="mt-auto border-t border-divider pt-4 text-xs text-fg-4">
               {arch.generatedAt && (
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-[var(--success)]" />
-                  Saved {new Date(arch.generatedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                  {T.saved} {new Date(arch.generatedAt).toLocaleString(T.locale, { dateStyle: 'medium', timeStyle: 'short' })}
                   {arch.commit && <span className="font-mono">· {arch.commit}</span>}
                 </div>
               )}

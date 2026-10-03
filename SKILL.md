@@ -1,6 +1,6 @@
 ---
 name: arch-map
-description: Use for "map the architecture", "arch map", "show how this app works", "visualize the codebase", "explain the flow of the app", "explain it in simple English" or "make an explainer video". Produces an interactive architecture view (.arch/index.html) with a guided tour; optional plain-English (STE) and video-script modes.
+description: Use for "map the architecture", "cartographie l'architecture", "mapea la arquitectura", "arch map", "show how this app works", "visualize the codebase", "explain the flow of the app", "explain it in simple English" or "make an explainer video". Produces an interactive architecture view (.arch/index.html) with a guided tour; optional plain-English (STE) and video-script modes.
 ---
 
 # Arch map
@@ -17,6 +17,8 @@ Read `references/explain.md` only when the user asks for one of these:
 
 - `ste`: write all text in controlled, simplified English (ASD-STE100 style, "80% of the way" unless the user says strict). Applies to steps 3 and 4: write the descriptions that way from the start.
 - `video`: also produce a narration script and, if wanted, a narrated explainer video of the tour (step 9).
+
+- `lang`: write the map in the user's language and set `"lang"` in the JSON. The viewer's own labels exist in `en`, `fr`, `es` (other codes fall back to English). Choose it from the user's request ("en français", "en español"), else from the language they are writing to you in. Applies to every text field; keep file paths, ids and tech names as they are.
 
 With no option, nothing changes.
 

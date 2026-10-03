@@ -15,7 +15,7 @@ export interface TourStep {
   components: string[]; connections?: string[]
 }
 export interface Architecture {
-  title: string; description: string
+  title: string; description: string; lang?: string
   commit?: string; generatedAt?: string
   groups: Group[]; components: Component[]
   connections: Connection[]; tour: TourStep[]

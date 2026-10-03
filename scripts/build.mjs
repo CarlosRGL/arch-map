@@ -18,6 +18,7 @@ const errors = []
 const err = (m) => errors.push(m)
 
 for (const k of ['title', 'description']) if (!arch[k]) err(`missing "${k}"`)
+if (arch.lang != null && typeof arch.lang !== 'string') err('"lang" must be a string like "en", "fr", "es"')
 for (const k of ['groups', 'components', 'connections', 'tour']) if (!Array.isArray(arch[k])) err(`"${k}" must be an array`)
 if (errors.length) fail()
 
