@@ -1,0 +1,107 @@
+@import "tailwindcss";
+@import "@xyflow/react/dist/style.css";
+
+/* Tokens from the @crdg "loniar" theme (https://crdg-registry.vercel.app): warm-cool neutrals, one indigo accent. */
+@font-face {
+  font-family: "Geist Variable";
+  font-style: normal; font-display: swap; font-weight: 100 900;
+  src: url("@fontsource-variable/geist/files/geist-latin-wght-normal.woff2") format("woff2-variations");
+}
+
+:root {
+  --radius: 0.5rem;
+  --background: #f8f9fc; --foreground: #14161f;
+  --card: #ffffff; --card-foreground: #14161f;
+  --primary: #5558d7; --primary-foreground: #ffffff;
+  --secondary: #eff0f7; --muted: #f1f2f8; --muted-foreground: #626780;
+  --accent: #eceef6;
+  --border: #e3e5ee; --border-strong: #d2d6e4; --ring: #5558d7;
+  --sidebar: #f3f4f9; --sidebar-border: #e3e5ee;
+  --success: #007b32;
+  --tone-blue: #0964c8; --tone-violet: #7a4acb; --tone-teal: #007369; --tone-rose: #b6306d;
+  --tone-orange: #b43f00; --tone-green: #00762e; --tone-amber: #9d5200; --tone-slate: #626780;
+  --fg-2: #464a60; --fg-3: #626780; --fg-4: #868ba2;
+  --surface-2: #f3f4f9; --surface-3: #eceef6; --sunken: #f5f6fa; --divider: #eceef5;
+  --primary-soft: color-mix(in srgb, var(--primary) 10%, transparent);
+  --primary-line: color-mix(in srgb, var(--primary) 38%, transparent);
+  --elevation-card: 0 1px 2px rgb(20 22 40 / 0.04), 0 0 0 1px var(--border);
+  --elevation-pop: 0 12px 32px -8px rgb(20 22 40 / 0.16), 0 2px 6px -2px rgb(20 22 40 / 0.06), 0 0 0 1px var(--border);
+  --ease: cubic-bezier(0.23, 1, 0.32, 1);
+  --scrollbar: #cfd3e2;
+}
+.dark {
+  --background: #16171d; --foreground: #eceef5;
+  --card: #1b1c23; --card-foreground: #eceef5;
+  --primary: #8e9af3; --primary-foreground: #14151f;
+  --secondary: #22232b; --muted: #22232b; --muted-foreground: #a2a6b8;
+  --accent: #272832;
+  --border: #2a2c36; --border-strong: #373946; --ring: #8e9af3;
+  --sidebar: #121318; --sidebar-border: #22232b;
+  --success: #5cba86;
+  --tone-blue: #72a5ea; --tone-violet: #a98deb; --tone-teal: #58c0b6; --tone-rose: #e68aab;
+  --tone-orange: #e3925f; --tone-green: #5cba86; --tone-amber: #d8a443; --tone-slate: #9b9fb2;
+  --fg-2: #b6b9c9; --fg-3: #9b9fb2; --fg-4: #6f7388;
+  --surface-2: #202129; --surface-3: #272832; --sunken: #13141a; --divider: #20212a;
+  --elevation-card: 0 0 0 1px var(--border);
+  --elevation-pop: 0 16px 40px -10px rgb(0 0 0 / 0.6), 0 0 0 1px var(--border-strong);
+  --scrollbar: #373946;
+}
+
+@theme inline {
+  --font-sans: "Geist Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-background: var(--background); --color-foreground: var(--foreground);
+  --color-card: var(--card); --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary); --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary); --color-muted: var(--muted); --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent); --color-border: var(--border); --color-border-strong: var(--border-strong);
+  --color-ring: var(--ring); --color-sidebar: var(--sidebar); --color-sidebar-border: var(--sidebar-border);
+  --color-fg-2: var(--fg-2); --color-fg-3: var(--fg-3); --color-fg-4: var(--fg-4);
+  --color-surface-2: var(--surface-2); --color-surface-3: var(--surface-3); --color-sunken: var(--sunken);
+  --color-primary-soft: var(--primary-soft); --color-primary-line: var(--primary-line);
+  --shadow-card: var(--elevation-card); --shadow-pop: var(--elevation-pop);
+  --radius-lg: var(--radius); --radius-md: calc(var(--radius) * 0.8); --radius-sm: calc(var(--radius) * 0.6);
+  --radius-xl: calc(var(--radius) * 1.4); --radius-2xl: calc(var(--radius) * 1.8);
+  --text-2xs: 11px; --text-2xs--line-height: 16px;
+  --text-xs: 12px; --text-xs--line-height: 16px;
+  --text-sm: 13.5px; --text-sm--line-height: 20px;
+  --text-base: 14.5px; --text-base--line-height: 22px;
+  --text-lg: 16px; --text-lg--line-height: 24px;
+  --text-xl: 19px; --text-xl--line-height: 26px;
+}
+
+html, body, #root { height: 100%; margin: 0; }
+body {
+  background: var(--background); color: var(--foreground);
+  font-family: var(--font-sans); font-size: 13.5px; line-height: 20px;
+  -webkit-font-smoothing: antialiased;
+}
+* { scrollbar-width: thin; scrollbar-color: var(--scrollbar) transparent; }
+::selection { background: color-mix(in oklab, var(--primary) 18%, transparent); }
+:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+.react-flow {
+  --xy-background-color: var(--sunken);
+  --xy-edge-label-background-color: var(--card);
+  --xy-edge-label-color: var(--fg-2);
+  --xy-controls-button-background-color: var(--card);
+  --xy-controls-button-background-color-hover: var(--accent);
+  --xy-controls-button-color: var(--fg-2);
+  --xy-controls-button-border-color: var(--border);
+  --xy-minimap-background-color: var(--card);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--background) 72%, transparent);
+}
+.react-flow__attribution { display: none; }
+.react-flow__controls { box-shadow: var(--elevation-card); border-radius: var(--radius); overflow: hidden; }
+.react-flow__minimap { box-shadow: var(--elevation-card); border-radius: var(--radius); overflow: hidden; }
+.react-flow__background pattern circle { fill: var(--border-strong); }
+.react-flow__edge-textbg { rx: 5; }
+.react-flow__edge-text { font-size: 11px; font-weight: 500; }
+.react-flow__edge path.react-flow__edge-path { transition: stroke .25s var(--ease), opacity .25s var(--ease), stroke-width .25s var(--ease); }
+.edge-flow { stroke-dasharray: 6 5; animation: dash 0.9s linear infinite; }
+@keyframes dash { to { stroke-dashoffset: -11; } }
+.node-dim { opacity: .28; filter: saturate(.4); }
+.node { transition: opacity .25s var(--ease), box-shadow .25s var(--ease), border-color .25s var(--ease); }
+@media (prefers-reduced-motion: reduce) {
+  .edge-flow { animation: none; }
+  .node, .react-flow__edge path.react-flow__edge-path { transition: none; }
+}

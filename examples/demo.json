@@ -1,0 +1,71 @@
+{
+  "title": "Bookshelf",
+  "description": "A small reading-list SaaS: readers save books, track progress and get weekly reading digests. Next.js front end, Postgres, a background worker and a few third-party APIs.",
+  "commit": "a1b2c3d",
+  "generatedAt": "2026-10-03T14:00:00Z",
+  "groups": [
+    { "id": "people", "label": "People", "color": "slate" },
+    { "id": "web", "label": "Web app", "color": "blue" },
+    { "id": "backend", "label": "Backend", "color": "violet" },
+    { "id": "data", "label": "Data", "color": "amber" },
+    { "id": "external", "label": "External services", "color": "rose" }
+  ],
+  "components": [
+    { "id": "reader", "label": "Reader", "group": "people", "kind": "user", "description": "A signed-in person who keeps a reading list." },
+    { "id": "cron", "label": "Scheduler", "group": "people", "kind": "worker", "tech": "Vercel Cron", "description": "Fires the weekly digest job every Monday morning." },
+    { "id": "library-page", "label": "Library page", "group": "web", "kind": "ui", "tech": "Next.js · RSC", "description": "Shows the reader's shelves and reading progress. Server-rendered, with a client-side shelf editor.", "files": ["app/library/page.tsx"] },
+    { "id": "add-book", "label": "Add-book dialog", "group": "web", "kind": "ui", "tech": "React", "description": "Search box that looks a book up by title or ISBN and adds it to a shelf.", "files": ["components/add-book.tsx"] },
+    { "id": "auth", "label": "Auth", "group": "backend", "kind": "service", "tech": "Auth.js", "description": "Signs readers in with email magic links and keeps the session cookie.", "files": ["auth.ts"] },
+    { "id": "books-api", "label": "Books API", "group": "backend", "kind": "api", "tech": "Route handlers", "description": "REST endpoints to list, add, move and rate books. Every call is scoped to the signed-in reader.", "files": ["app/api/books/route.ts"] },
+    { "id": "catalog", "label": "Catalog lookup", "group": "backend", "kind": "service", "tech": "TypeScript", "description": "Turns a title or ISBN into clean book metadata and caches the answer.", "files": ["lib/catalog.ts"] },
+    { "id": "digest-job", "label": "Digest job", "group": "backend", "kind": "worker", "tech": "Queue worker", "description": "Builds each reader's weekly summary (pages read, next up) and hands it to the mailer.", "files": ["jobs/digest.ts"] },
+    { "id": "mailer", "label": "Mailer", "group": "backend", "kind": "service", "tech": "React Email", "description": "Renders and sends transactional e-mails: magic links and the weekly digest.", "files": ["lib/mailer.tsx"] },
+    { "id": "db", "label": "Postgres", "group": "data", "kind": "database", "tech": "Drizzle ORM", "description": "Readers, books, shelves and reading events.", "files": ["db/schema.ts"] },
+    { "id": "cache", "label": "Metadata cache", "group": "data", "kind": "storage", "tech": "Redis", "description": "Keeps catalog answers for 30 days to stay under the provider's rate limit." },
+    { "id": "openlibrary", "label": "Open Library", "group": "external", "kind": "external", "description": "Public book metadata API (titles, authors, covers)." },
+    { "id": "resend", "label": "Resend", "group": "external", "kind": "external", "description": "E-mail delivery provider." }
+  ],
+  "connections": [
+    { "id": "c1", "source": "reader", "target": "library-page", "label": "opens" },
+    { "id": "c2", "source": "reader", "target": "add-book", "label": "searches" },
+    { "id": "c3", "source": "library-page", "target": "books-api", "label": "loads shelves" },
+    { "id": "c4", "source": "add-book", "target": "books-api", "label": "adds a book" },
+    { "id": "c5", "source": "books-api", "target": "auth", "label": "checks session" },
+    { "id": "c6", "source": "books-api", "target": "catalog", "label": "looks up" },
+    { "id": "c7", "source": "catalog", "target": "cache", "label": "reads cache" },
+    { "id": "c8", "source": "catalog", "target": "openlibrary", "label": "fetches metadata" },
+    { "id": "c9", "source": "books-api", "target": "db", "label": "reads and writes" },
+    { "id": "c10", "source": "cron", "target": "digest-job", "label": "triggers weekly" },
+    { "id": "c11", "source": "digest-job", "target": "db", "label": "reads progress" },
+    { "id": "c12", "source": "digest-job", "target": "mailer", "label": "sends digest" },
+    { "id": "c13", "source": "mailer", "target": "resend", "label": "delivers" },
+    { "id": "c14", "source": "auth", "target": "mailer", "label": "sends magic link" },
+    { "id": "c15", "source": "auth", "target": "db", "label": "stores sessions" }
+  ],
+  "tour": [
+    {
+      "title": "A reader opens their library",
+      "description": "The page is rendered on the server: it asks the Books API for the reader's shelves, which checks the session and reads Postgres.",
+      "components": ["reader", "library-page", "books-api", "auth", "db"],
+      "connections": ["c1", "c3", "c5", "c9"]
+    },
+    {
+      "title": "They add a book by ISBN",
+      "description": "The dialog posts to the Books API. The catalog lookup answers from the cache when it can, otherwise from Open Library, then the book lands on a shelf.",
+      "components": ["reader", "add-book", "books-api", "catalog", "cache", "openlibrary", "db"],
+      "connections": ["c2", "c4", "c6", "c7", "c8", "c9"]
+    },
+    {
+      "title": "Monday: the weekly digest",
+      "description": "The scheduler wakes the digest job, which reads each reader's progress, renders an e-mail and hands it to the provider.",
+      "components": ["cron", "digest-job", "db", "mailer", "resend"],
+      "connections": ["c10", "c11", "c12", "c13"]
+    },
+    {
+      "title": "Signing in",
+      "description": "Readers sign in with a magic link: Auth.js creates a session row and asks the mailer to send the link.",
+      "components": ["reader", "auth", "mailer", "resend", "db"],
+      "connections": ["c14", "c13", "c15"]
+    }
+  ]
+}

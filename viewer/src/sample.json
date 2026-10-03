@@ -1,0 +1,20 @@
+{
+  "title": "Sample app",
+  "description": "Placeholder shown when no architecture.json was injected.",
+  "groups": [
+    { "id": "app", "label": "App", "color": "blue" },
+    { "id": "data", "label": "Data", "color": "amber" }
+  ],
+  "components": [
+    { "id": "user", "label": "User", "group": "app", "kind": "user", "description": "Someone using the app." },
+    { "id": "web", "label": "Web UI", "group": "app", "kind": "ui", "tech": "React", "description": "The screens." },
+    { "id": "db", "label": "Database", "group": "data", "kind": "database", "tech": "SQLite", "description": "Stores everything." }
+  ],
+  "connections": [
+    { "id": "c1", "source": "user", "target": "web", "label": "opens" },
+    { "id": "c2", "source": "web", "target": "db", "label": "reads and writes" }
+  ],
+  "tour": [
+    { "title": "A user opens the app", "description": "The UI loads data from the database.", "components": ["user", "web", "db"], "connections": ["c1", "c2"] }
+  ]
+}
