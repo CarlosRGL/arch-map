@@ -53,9 +53,9 @@ Each kind gets its own icon and tint in the viewer.
 ## Sizing rules
 
 - 12-40 components. Fewer than 12 is not an architecture; more than 40 is a file listing.
-- 4-8 groups. Every component belongs to exactly one group.
+- 4-8 groups. Every component belongs to exactly one group. Groups become horizontal swimlanes, drawn top to bottom in the order you list them: start with where flows begin (people, UIs), end with infrastructure (data, external services).
 - Connections follow real runtime relations (calls, reads, writes, renders, schedules, sends to),
   not imports. Direction is the direction of the initiating call or data push.
 - 4-7 tour steps, each telling one user-visible flow end to end with at most 8 components (a step that lights up half the map teaches nothing), in the order a newcomer
-  should learn them. Every component and connection id referenced must exist.
+  should learn them. Every component and connection id referenced must exist. List a step's `connections` in the order they happen: the viewer numbers them 1, 2, 3 on the map and in the step's hop list.
 - Add the actors as components of kind `user` (the person, an AI agent, a cron) so flows have a start.
