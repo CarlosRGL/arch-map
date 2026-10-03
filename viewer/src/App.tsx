@@ -1,96 +1,73 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
-  ReactFlow, ReactFlowProvider, Background, BackgroundVariant, Controls, MiniMap, Handle, Position,
-  MarkerType, BaseEdge, EdgeLabelRenderer, getSmoothStepPath, useReactFlow,
-  type Node, type Edge, type NodeProps, type EdgeProps,
+  ReactFlow, ReactFlowProvider, Background, BackgroundVariant, Controls, MiniMap,
+  Handle, Position, MarkerType, useReactFlow, type Node, type Edge, type NodeProps,
 } from '@xyflow/react'
-import { ArrowRight, ChevronLeft, ChevronRight, FileCode2, Moon, Play, Sun, X } from 'lucide-react'
-import type { Architecture, Component } from './types'
+import { ChevronLeft, ChevronRight, FileCode2, Play, X, CheckCircle2, Sun, Moon } from 'lucide-react'
+import type { Architecture, Component, Kind } from './types'
 import { KIND_ICON, KIND_COLOR, TINT, soft } from './theme'
-import { layout, NODE_H, NODE_W, RAIL } from './layout'
+import { layout, NODE_H, NODE_W } from './layout'
 
 type CompData = { comp: Component; dim: boolean; active: boolean }
-type LaneData = { label: string; color: string; count: number; dim: boolean }
-type HopData = { label?: string; n?: number; lit: boolean }
+type GroupData = { label: string; color: string; count: number; dim: boolean }
 
-const HANDLE = '!h-1.5 !w-1.5 !border-0 !bg-transparent'
+function KindTile({ kind, size = 34 }: { kind: Kind; size?: number }) {
+  const Icon = KIND_ICON[kind]
+  const c = KIND_COLOR[kind]
+  return (
+    <div
+      className="grid shrink-0 place-items-center rounded-md"
+      style={{ width: size, height: size, background: soft(c, 14), boxShadow: `inset 0 0 0 1px ${soft(c, 28)}`, color: c }}
+    >
+      <Icon size={size * 0.52} strokeWidth={2} />
+    </div>
+  )
+}
 
 function CompNode({ data, selected }: NodeProps<Node<CompData>>) {
   const { comp, dim, active } = data
   const lit = active || selected
-  const Icon = KIND_ICON[comp.kind]
-  const color = KIND_COLOR[comp.kind]
   return (
     <div
-      className={`node relative flex items-center gap-2 overflow-hidden rounded-md bg-card pl-3.5 pr-2.5 ${dim ? 'node-dim' : ''}`}
+      className={`node flex items-center gap-2.5 rounded-lg bg-card px-2.5 ${dim ? 'node-dim' : ''}`}
       style={{
         width: NODE_W, height: NODE_H,
-        boxShadow: lit ? '0 0 0 1.5px var(--primary), 0 8px 24px -8px var(--primary-line)' : 'var(--elevation-card)',
+        boxShadow: lit
+          ? '0 0 0 1.5px var(--primary), 0 8px 24px -8px var(--primary-line)'
+          : 'var(--elevation-card)',
       }}
     >
-      <Handle id="l" type="target" position={Position.Left} className={HANDLE} />
-      <Handle id="r" type="source" position={Position.Right} className={HANDLE} />
-      <Handle id="t" type="target" position={Position.Top} className={HANDLE} />
-      <Handle id="b" type="source" position={Position.Bottom} className={HANDLE} />
-      <span className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />
-      <Icon size={16} strokeWidth={2} style={{ color }} className="shrink-0" />
+      <Handle id="l" type="target" position={Position.Left} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
+      <Handle id="r" type="source" position={Position.Right} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
+      <Handle id="t" type="target" position={Position.Top} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
+      <Handle id="b" type="source" position={Position.Bottom} className="!h-1.5 !w-1.5 !border-0 !bg-transparent" />
+      <KindTile kind={comp.kind} />
       <div className="min-w-0">
         <div className="truncate text-[13px] font-semibold leading-tight text-foreground">{comp.label}</div>
-        <div className="truncate font-mono text-[10px] uppercase leading-tight tracking-wide text-fg-4">
-          {comp.tech ?? comp.kind}
+        <div className="truncate text-[10.5px] leading-tight text-fg-3">
+          {comp.kind[0].toUpperCase() + comp.kind.slice(1)}{comp.tech ? ` · ${comp.tech}` : ''}
         </div>
       </div>
     </div>
   )
 }
 
-function LaneNode({ data }: NodeProps<Node<LaneData>>) {
+function GroupNode({ data }: NodeProps<Node<GroupData>>) {
   return (
     <div
-      className={`node h-full w-full rounded-xl border ${data.dim ? 'node-dim' : ''}`}
-      style={{ background: soft(data.color, 5), borderColor: soft(data.color, 22) }}
+      className={`node h-full w-full rounded-2xl border ${data.dim ? 'node-dim' : ''}`}
+      style={{ background: soft(data.color, 6), borderColor: soft(data.color, 26) }}
     >
-      <div className="flex h-full items-center border-r px-4" style={{ width: RAIL, borderColor: soft(data.color, 22) }}>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 text-[10.5px] font-bold uppercase tracking-[0.12em]" style={{ color: data.color }}>
-            <span className="h-1.5 w-1.5 shrink-0 rounded-full" style={{ background: data.color }} />
-            <span className="break-words leading-tight">{data.label}</span>
-          </div>
-          <div className="mt-0.5 pl-3 text-[10.5px] text-fg-4">{data.count} {data.count === 1 ? 'component' : 'components'}</div>
-        </div>
+      <div className="flex items-center gap-1.5 px-4 pt-3 text-[10.5px] font-bold uppercase tracking-[0.12em]" style={{ color: data.color }}>
+        <span className="h-1.5 w-1.5 rounded-full" style={{ background: data.color }} />
+        {data.label}
+        <span className="font-semibold opacity-60">{data.count}</span>
       </div>
     </div>
   )
 }
 
-function HopEdge(p: EdgeProps<Edge<HopData>>) {
-  const [path, lx, ly] = getSmoothStepPath({
-    sourceX: p.sourceX, sourceY: p.sourceY, sourcePosition: p.sourcePosition,
-    targetX: p.targetX, targetY: p.targetY, targetPosition: p.targetPosition, borderRadius: 12,
-  })
-  const d = p.data!
-  return (
-    <>
-      <BaseEdge id={p.id} path={path} markerEnd={p.markerEnd} style={p.style} className={d.lit ? 'edge-flow' : ''} />
-      {d.lit && (d.label || d.n) && (
-        <EdgeLabelRenderer>
-          <div
-            className="nodrag nopan pointer-events-none absolute z-30 flex items-center gap-1 rounded-full bg-card py-0.5 pl-0.5 pr-2 text-[11px] font-medium text-fg-2 shadow-pop"
-            style={{ transform: `translate(-50%, -50%) translate(${lx}px, ${ly}px)`, paddingLeft: d.n ? 2 : 8 }}
-          >
-            {d.n && (
-              <span className="grid h-4 min-w-4 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{d.n}</span>
-            )}
-            {d.label}
-          </div>
-        </EdgeLabelRenderer>
-      )}
-    </>
-  )
-}
-
-const nodeTypes = { comp: CompNode, lane: LaneNode }
-const edgeTypes = { hop: HopEdge }
+const nodeTypes = { comp: CompNode, cluster: GroupNode }
 
 function Viewer({ arch }: { arch: Architecture }) {
   const rf = useReactFlow()
@@ -100,52 +77,45 @@ function Viewer({ arch }: { arch: Architecture }) {
   const toggleTheme = () => {
     const next = !dark
     document.documentElement.classList.toggle('dark', next)
-    try { localStorage.setItem('arch-theme', next ? 'dark' : 'light') } catch { /* storage blocked (file://, private mode) */ }
+    try { localStorage.setItem('arch-theme', next ? 'dark' : 'light') } catch { /* private mode */ }
     setDark(next)
   }
 
   const byId = useMemo(() => new Map(arch.components.map((c) => [c.id, c])), [arch])
   const groupById = useMemo(() => new Map(arch.groups.map((g) => [g.id, g])), [arch])
-  const connById = useMemo(() => new Map(arch.connections.map((c) => [c.id, c])), [arch])
   const lay = useMemo(() => layout(arch), [arch])
-  const nodeAt = useMemo(() => new Map(lay.nodePos.map((p) => [p.id, p])), [lay])
 
-  // The hops of the current step, in the order they are listed in the file.
-  const hops = useMemo(() => {
-    if (step === null) return []
-    return (arch.tour[step].connections ?? []).map((id) => connById.get(id)).filter((c) => !!c)
-  }, [step, arch, connById])
-
+  // What is lit right now: a tour step, or a selected component and its neighbours.
   const hl = useMemo(() => {
-    const comps = new Set<string>(), conns = new Map<string, number | undefined>()
-    if (step !== null) {
+    const comps = new Set<string>(), conns = new Set<string>()
+    if (step !== null && arch.tour[step]) {
       arch.tour[step].components.forEach((c) => comps.add(c))
-      hops.forEach((c, i) => { conns.set(c.id, i + 1); comps.add(c.source); comps.add(c.target) })
+      arch.tour[step].connections?.forEach((c) => conns.add(c))
+      // a step lists connections: make sure their endpoints are lit too
+      arch.connections.filter((c) => conns.has(c.id)).forEach((c) => { comps.add(c.source); comps.add(c.target) })
     } else if (selected) {
       comps.add(selected)
       arch.connections.filter((c) => c.source === selected || c.target === selected)
-        .forEach((c) => { conns.set(c.id, undefined); comps.add(c.source); comps.add(c.target) })
+        .forEach((c) => { conns.add(c.id); comps.add(c.source); comps.add(c.target) })
     }
     return { comps, conns, on: comps.size > 0 }
-  }, [step, selected, arch, hops])
+  }, [step, selected, arch])
 
   const nodes = useMemo<Node[]>(() => {
     const out: Node[] = lay.boxes.map((b) => {
       const g = groupById.get(b.id)!
-      const members = arch.components.filter((c) => c.group === b.id)
+      const count = arch.components.filter((c) => c.group === b.id).length
+      const dim = hl.on && !arch.components.some((c) => c.group === b.id && hl.comps.has(c.id))
       return {
-        id: `lane:${b.id}`, type: 'lane', position: { x: 0, y: b.y }, width: b.w, height: b.h,
-        style: { width: b.w, height: b.h }, zIndex: 0, selectable: false, draggable: false,
-        data: {
-          label: g.label, color: TINT[g.color] ?? TINT.slate, count: members.length,
-          dim: hl.on && !members.some((c) => hl.comps.has(c.id)),
-        } satisfies LaneData,
+        id: `g:${b.id}`, type: 'cluster', position: { x: b.x, y: b.y },
+        width: b.w, height: b.h, style: { width: b.w, height: b.h }, zIndex: 0, selectable: false, draggable: false,
+        data: { label: g.label, color: TINT[g.color] ?? TINT.slate, count, dim } satisfies GroupData,
       }
     })
     for (const p of lay.nodePos) {
       const comp = byId.get(p.id)!
       out.push({
-        id: comp.id, type: 'comp', parentId: `lane:${comp.group}`, extent: 'parent',
+        id: comp.id, type: 'comp', parentId: `g:${comp.group}`, extent: 'parent',
         position: { x: p.x, y: p.y }, width: NODE_W, height: NODE_H, zIndex: 2, selected: selected === comp.id,
         data: { comp, dim: hl.on && !hl.comps.has(comp.id), active: hl.comps.has(comp.id) } satisfies CompData,
       })
@@ -154,38 +124,40 @@ function Viewer({ arch }: { arch: Architecture }) {
   }, [lay, hl, selected, arch, byId, groupById])
 
   const edges = useMemo<Edge[]>(() => {
+    const order = new Map(arch.components.map((c, i) => [c.id, i]))
     return arch.connections.filter((c) => byId.has(c.source) && byId.has(c.target)).map((c) => {
-      const a = nodeAt.get(c.source)!, b = nodeAt.get(c.target)!
-      const dy = b.absY - a.absY
-      const vertical = Math.abs(dy) >= NODE_H
+      const sameGroup = byId.get(c.source)!.group === byId.get(c.target)!.group
+      const down = (order.get(c.source) ?? 0) < (order.get(c.target) ?? 0)
       const lit = hl.conns.has(c.id)
       const color = lit ? 'var(--primary)' : 'var(--border-strong)'
       return {
-        id: c.id, source: c.source, target: c.target, type: 'hop', zIndex: lit ? 10 : 1,
-        sourceHandle: vertical ? (dy > 0 ? 'b' : 't') : (b.x > a.x ? 'r' : 'l'),
-        targetHandle: vertical ? (dy > 0 ? 't' : 'b') : (b.x > a.x ? 'l' : 'r'),
-        data: { label: c.label, n: hl.conns.get(c.id), lit } satisfies HopData,
+        id: c.id, source: c.source, target: c.target, zIndex: lit ? 10 : 1,
+        sourceHandle: sameGroup ? (down ? 'b' : 't') : 'r',
+        targetHandle: sameGroup ? (down ? 't' : 'b') : 'l',
+        label: lit ? c.label : undefined,
+        className: lit ? 'edge-flow' : '',
         markerEnd: { type: MarkerType.ArrowClosed, color, width: 14, height: 14 },
-        style: { stroke: color, strokeWidth: lit ? 2 : 1.2, opacity: hl.on && !lit ? 0.18 : 0.7 },
+        style: { stroke: color, strokeWidth: lit ? 2 : 1.4, opacity: hl.on && !lit ? 0.25 : 1 },
+        labelStyle: { fill: 'var(--fg-2)' }, labelBgPadding: [6, 3] as [number, number], labelBgBorderRadius: 5,
+        labelBgStyle: { fill: 'var(--card)', stroke: 'var(--border-strong)' },
       }
     })
-  }, [arch, byId, nodeAt, hl])
+  }, [arch, byId, hl])
 
-  const fit = useCallback((ids: string[], maxZoom = 1.2) => {
-    // wait a frame so the canvas has its final size after the dock opens or closes
-    setTimeout(() => rf.fitView({ nodes: ids.length ? ids.map((id) => ({ id })) : undefined, padding: ids.length ? 0.3 : 0.06, duration: 650, maxZoom }), 60)
+  const focus = useCallback((ids: string[]) => {
+    if (!ids.length) return rf.fitView({ padding: 0.15, duration: 600 })
+    rf.fitView({ nodes: ids.map((id) => ({ id })), padding: 0.35, duration: 650, maxZoom: 1.15 })
   }, [rf])
-  const focus = useCallback((ids: string[]) => fit(ids), [fit])
 
   const goStep = useCallback((i: number | null) => {
     setSelected(null)
     setStep(i)
-    if (i === null) { fit([], 1); return }
+    if (i === null) { rf.fitView({ padding: 0.15, duration: 600 }); return }
     const s = arch.tour[i]
     const ids = new Set(s.components)
-    s.connections?.forEach((id) => { const c = connById.get(id); if (c) { ids.add(c.source); ids.add(c.target) } })
+    arch.connections.filter((c) => s.connections?.includes(c.id)).forEach((c) => { ids.add(c.source); ids.add(c.target) })
     focus([...ids])
-  }, [arch, fit, focus, connById])
+  }, [arch, rf, focus])
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -200,66 +172,89 @@ function Viewer({ arch }: { arch: Architecture }) {
 
   const sel = selected ? byId.get(selected) : null
   const selConns = sel ? arch.connections.filter((c) => c.source === sel.id || c.target === sel.id) : []
-  const cur = step !== null ? arch.tour[step] : null
 
   return (
-    <div className="flex h-full w-full flex-col">
-      <header className="flex shrink-0 items-center gap-4 border-b border-sidebar-border bg-sidebar px-5 py-2.5">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-baseline gap-3">
-            <h1 className="shrink-0 text-lg font-semibold tracking-tight text-foreground">{arch.title}</h1>
-            <span className="shrink-0 text-xs text-fg-4">
-              {arch.components.length} components · {arch.connections.length} connections · {arch.groups.length} layers
-              {arch.commit ? <> · <span className="font-mono">{arch.commit}</span></> : null}
-            </span>
-          </div>
-          <p className="mt-0.5 line-clamp-2 max-w-4xl text-xs leading-snug text-fg-3" title={arch.description}>{arch.description}</p>
-        </div>
-        <button onClick={toggleTheme} aria-label="Toggle light and dark mode"
-          className="grid h-8 w-8 shrink-0 place-items-center rounded-md text-fg-3 shadow-card hover:bg-accent hover:text-foreground">
-          {dark ? <Sun size={15} /> : <Moon size={15} />}
-        </button>
-      </header>
-
-      <div className="relative min-h-0 flex-1">
+    <div className="flex h-full w-full">
+      <div className="relative min-w-0 flex-1">
         <ReactFlow
-          nodes={nodes} edges={edges} nodeTypes={nodeTypes} edgeTypes={edgeTypes}
-          fitView fitViewOptions={{ padding: 0.06 }} minZoom={0.2} maxZoom={1.6}
-          nodesConnectable={false} nodesDraggable={false} colorMode={dark ? 'dark' : 'light'} proOptions={{ hideAttribution: true }}
+          nodes={nodes} edges={edges} nodeTypes={nodeTypes}
+          fitView fitViewOptions={{ padding: 0.15 }} minZoom={0.15} maxZoom={1.6}
+          nodesConnectable={false} colorMode={dark ? 'dark' : 'light'} proOptions={{ hideAttribution: true }}
           onNodeClick={(_, n) => { if (n.type === 'comp') { setStep(null); setSelected(n.id) } }}
-          onPaneClick={() => setSelected(null)}
+          onPaneClick={() => { setSelected(null) }}
         >
           <Background variant={BackgroundVariant.Dots} gap={22} size={1.4} />
-          <Controls showInteractive={false} position="top-left" />
-          <MiniMap pannable zoomable position="top-right" style={{ width: 150, height: 96 }}
-            nodeColor={(n) => (n.type === 'lane' ? 'var(--surface-3)' : KIND_COLOR[(n.data as CompData).comp.kind])} />
+          <Controls showInteractive={false} position="bottom-left" />
+          <MiniMap pannable zoomable position="bottom-right" maskColor="transparent"
+            nodeColor={(n) => (n.type === 'cluster' ? 'var(--surface-3)' : KIND_COLOR[(n.data as CompData).comp.kind])} />
         </ReactFlow>
 
-        {sel && (
-          <aside className="absolute right-4 top-28 z-20 max-h-[calc(100%-8rem)] w-[340px] overflow-y-auto rounded-xl bg-card p-4 shadow-pop">
-            <button onClick={() => setSelected(null)} aria-label="Close" className="absolute right-3 top-3 text-fg-3 hover:text-foreground"><X size={15} /></button>
-            <div className="flex items-center gap-2.5 pr-6">
-              {(() => { const I = KIND_ICON[sel.kind]; return <I size={18} style={{ color: KIND_COLOR[sel.kind] }} /> })()}
-              <div className="min-w-0">
-                <div className="truncate text-base font-semibold text-foreground">{sel.label}</div>
-                <div className="font-mono text-[10.5px] uppercase tracking-wide text-fg-4">{sel.kind}{sel.tech ? ` · ${sel.tech}` : ''}</div>
+        {step !== null && (
+          <div className="pointer-events-auto absolute left-1/2 top-4 z-20 w-[460px] max-w-[92%] -translate-x-1/2 rounded-xl bg-card/95 p-4 shadow-pop backdrop-blur">
+            <div className="mb-2 flex items-center justify-between text-[10px] font-bold uppercase tracking-[0.14em] text-fg-3">
+              <span>How it works · {step + 1} of {arch.tour.length}</span>
+              <div className="flex items-center gap-1.5">
+                {arch.tour.map((_, i) => (
+                  <button key={i} aria-label={`Step ${i + 1}`} onClick={() => goStep(i)}
+                    className={`h-1.5 rounded-full transition-all ${i === step ? 'w-5 bg-primary' : 'w-1.5 bg-border-strong hover:bg-fg-4'}`} />
+                ))}
+                <button aria-label="End tour" onClick={() => goStep(null)} className="ml-2 text-fg-3 hover:text-foreground"><X size={14} /></button>
               </div>
             </div>
-            <div className="mt-1 text-xs text-fg-3">in {groupById.get(sel.group)?.label}</div>
-            <p className="mt-3 text-[13px] leading-relaxed text-fg-2">{sel.description}</p>
+            <div className="text-[15px] font-semibold text-foreground">{arch.tour[step].title}</div>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-fg-2">{arch.tour[step].description}</p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {arch.tour[step].components.map((id) => byId.get(id) && (
+                <span key={id} className="flex items-center gap-1 rounded-md bg-surface-3 px-1.5 py-0.5 text-[11px] text-fg-2">
+                  <KindTile kind={byId.get(id)!.kind} size={14} />{byId.get(id)!.label}
+                </span>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center justify-between">
+              <button disabled={step === 0} onClick={() => goStep(step - 1)}
+                className="flex items-center gap-1 rounded-md border border-border-strong px-3 py-1.5 text-xs text-fg-2 hover:bg-accent disabled:opacity-30">
+                <ChevronLeft size={14} />Back
+              </button>
+              <span className="text-[10.5px] text-fg-4">← → to move · Esc to close</span>
+              {step < arch.tour.length - 1 ? (
+                <button onClick={() => goStep(step + 1)} className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">
+                  Next<ChevronRight size={14} />
+                </button>
+              ) : (
+                <button onClick={() => goStep(null)} className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90">Done</button>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <aside className="flex w-[360px] shrink-0 flex-col overflow-y-auto border-l border-sidebar-border bg-sidebar p-6">
+        {sel ? (
+          <div>
+            <button onClick={() => setSelected(null)} className="mb-4 flex items-center gap-1 text-xs text-fg-3 hover:text-foreground">
+              <ChevronLeft size={14} />Back to overview
+            </button>
+            <div className="flex items-center gap-3">
+              <KindTile kind={sel.kind} size={42} />
+              <div>
+                <div className="text-lg font-semibold text-foreground">{sel.label}</div>
+                <div className="text-xs text-fg-3">{sel.kind}{sel.tech ? ` · ${sel.tech}` : ''} · {groupById.get(sel.group)?.label}</div>
+              </div>
+            </div>
+            <p className="mt-4 text-[13px] leading-relaxed text-fg-2">{sel.description}</p>
             {selConns.length > 0 && (
               <>
-                <h3 className="mb-1.5 mt-4 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">Connections</h3>
-                <ul className="space-y-1">
+                <h3 className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">Connections</h3>
+                <ul className="space-y-1.5">
                   {selConns.map((c) => {
                     const out = c.source === sel.id
-                    const other = byId.get(out ? c.target : c.source)!
+                    const other = byId.get(out ? c.target : c.source)
                     return (
                       <li key={c.id}>
-                        <button onClick={() => { setSelected(other.id); focus([other.id]) }}
-                          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs shadow-card hover:bg-accent">
+                        <button onClick={() => { setSelected(other!.id); focus([other!.id]) }}
+                          className="flex w-full items-center gap-2 rounded-md bg-card px-2.5 py-1.5 text-left text-xs shadow-card hover:bg-accent">
                           <span className="text-fg-4">{out ? '→' : '←'}</span>
-                          <span className="min-w-0 flex-1 truncate text-foreground">{other.label}</span>
+                          <span className="min-w-0 flex-1 truncate text-foreground">{other?.label}</span>
                           <span className="truncate text-fg-4">{c.label}</span>
                         </button>
                       </li>
@@ -270,73 +265,71 @@ function Viewer({ arch }: { arch: Architecture }) {
             )}
             {sel.files && sel.files.length > 0 && (
               <>
-                <h3 className="mb-1.5 mt-4 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">Files</h3>
+                <h3 className="mb-2 mt-6 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">Files</h3>
                 <ul className="space-y-1">
                   {sel.files.map((f) => (
-                    <li key={f} className="flex items-start gap-1.5 break-all font-mono text-[11px] text-fg-3"><FileCode2 size={12} className="mt-0.5 shrink-0" />{f}</li>
+                    <li key={f} className="flex items-start gap-1.5 break-all font-mono text-[11px] text-fg-3">
+                      <FileCode2 size={12} className="mt-0.5 shrink-0" />{f}
+                    </li>
                   ))}
                 </ul>
               </>
             )}
-          </aside>
-        )}
-
-      </div>
-
-        <section className="shrink-0 border-t border-sidebar-border bg-card" aria-label="Flows">
-          <div className="flex items-center gap-1 overflow-x-auto px-4 py-2">
-            <span className="shrink-0 px-2 text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">Flows</span>
-            {arch.tour.map((s, i) => (
-              <button key={i} onClick={() => goStep(step === i ? null : i)} title={s.title}
-                className={`flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${
-                  step === i ? 'bg-primary text-primary-foreground' : 'text-fg-2 hover:bg-accent'}`}>
-                <span className={`grid h-4 w-4 place-items-center rounded-full text-[10px] font-bold ${step === i ? 'bg-primary-foreground/20' : 'bg-surface-3 text-fg-3'}`}>{i + 1}</span>
-                <span className="max-w-[190px] truncate">{s.title}</span>
-              </button>
-            ))}
-            {step === null && (
-              <button onClick={() => goStep(0)} className="ml-auto flex shrink-0 items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">
-                <Play size={11} />Play the tour
-              </button>
-            )}
           </div>
-
-          {cur && step !== null && (
-            <div className="border-t border-divider px-5 pb-3 pt-3">
-              <div className="grid gap-5" style={{ gridTemplateColumns: hops.length ? 'minmax(0,1.15fr) minmax(0,1fr)' : '1fr' }}>
-                <div>
-                  <div className="text-[15px] font-semibold text-foreground">{cur.title}</div>
-                  <p className="mt-1 text-[12.5px] leading-relaxed text-fg-2">{cur.description}</p>
-                </div>
-                {hops.length > 0 && (
-                  <ol className="max-h-36 space-y-1 overflow-y-auto pr-1">
-                    {hops.map((c, i) => (
-                      <li key={c.id} className="flex items-center gap-2 text-xs">
-                        <span className="grid h-4 min-w-4 shrink-0 place-items-center rounded-full bg-primary px-1 text-[10px] font-bold text-primary-foreground">{i + 1}</span>
-                        <span className="truncate text-foreground">{byId.get(c.source)?.label}</span>
-                        <ArrowRight size={11} className="shrink-0 text-fg-4" />
-                        <span className="truncate text-foreground">{byId.get(c.target)?.label}</span>
-                        {c.label && <span className="truncate text-fg-4">{c.label}</span>}
-                      </li>
-                    ))}
-                  </ol>
-                )}
-              </div>
-              <div className="mt-3 flex items-center justify-between">
-                <button disabled={step === 0} onClick={() => goStep(step - 1)}
-                  className="flex items-center gap-1 rounded-md border border-border-strong px-2.5 py-1 text-xs text-fg-2 hover:bg-accent disabled:opacity-30">
-                  <ChevronLeft size={13} />Back
-                </button>
-                <span className="text-[10.5px] text-fg-4">← → to move · Esc to close</span>
-                {step < arch.tour.length - 1 ? (
-                  <button onClick={() => goStep(step + 1)} className="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">Next<ChevronRight size={13} /></button>
-                ) : (
-                  <button onClick={() => goStep(null)} className="rounded-md bg-primary px-2.5 py-1 text-xs font-medium text-primary-foreground hover:opacity-90">Done</button>
-                )}
-              </div>
+        ) : (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <h1 className="text-xl font-semibold tracking-tight text-foreground">{arch.title}</h1>
+              <button onClick={toggleTheme} aria-label="Toggle light and dark mode"
+                className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-fg-3 shadow-card hover:bg-accent hover:text-foreground">
+                {dark ? <Sun size={14} /> : <Moon size={14} />}
+              </button>
             </div>
-          )}
-        </section>
+            <p className="mt-2 text-[13px] leading-relaxed text-fg-2">{arch.description}</p>
+            <p className="mt-3 text-xs text-fg-4">
+              {arch.components.length} components · {arch.connections.length} connections · {arch.groups.length} groups
+            </p>
+
+            <div className="mb-3 mt-7 flex items-center justify-between">
+              <h2 className="text-[10px] font-bold uppercase tracking-[0.14em] text-fg-4">How it works</h2>
+              <button onClick={() => goStep(step === null ? 0 : null)}
+                className="flex items-center gap-1 rounded-md bg-primary px-2.5 py-1 text-[11px] font-medium text-primary-foreground hover:opacity-90">
+                {step === null ? <><Play size={11} />Start tour</> : <>End tour</>}
+              </button>
+            </div>
+            <ol className="space-y-2">
+              {arch.tour.map((s, i) => (
+                <li key={i}>
+                  <button onClick={() => goStep(i)}
+                    className={`w-full rounded-xl border p-3 text-left transition-colors ${step === i ? 'border-primary-line bg-primary-soft' : 'border-transparent hover:bg-accent'}`}>
+                    <div className="flex gap-2.5">
+                      <span className={`grid h-5 w-5 shrink-0 place-items-center rounded-full text-[11px] font-bold ${step === i ? 'bg-primary text-primary-foreground' : 'bg-surface-3 text-fg-3'}`}>{i + 1}</span>
+                      <div className="min-w-0">
+                        <div className="text-[13px] font-semibold text-foreground">{s.title}</div>
+                        <p className="mt-0.5 text-xs leading-relaxed text-fg-3">{s.description}</p>
+                        <div className="mt-2 flex flex-wrap gap-1">
+                          {s.components.map((id) => byId.get(id) && <KindTile key={id} kind={byId.get(id)!.kind} size={16} />)}
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                </li>
+              ))}
+            </ol>
+            <p className="mt-4 text-[11px] text-fg-4">Click any component on the canvas to see its role.</p>
+
+            <div className="mt-auto border-t border-divider pt-4 text-xs text-fg-4">
+              {arch.generatedAt && (
+                <div className="flex items-center gap-1.5">
+                  <CheckCircle2 size={13} className="text-[var(--success)]" />
+                  Saved {new Date(arch.generatedAt).toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' })}
+                  {arch.commit && <span className="font-mono">· {arch.commit}</span>}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </aside>
     </div>
   )
 }

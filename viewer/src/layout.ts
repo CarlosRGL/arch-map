@@ -1,77 +1,63 @@
+import dagre from '@dagrejs/dagre'
 import type { Architecture } from './types'
 
-export const NODE_W = 196
-export const NODE_H = 54
-const GAP_X = 16
-const GAP_Y = 14
-const LANE_PAD_Y = 16
-const LANE_PAD_X = 20
-const LANE_GAP = 10
-export const RAIL = 190
-const MAX_PER_ROW = 6
+export const NODE_W = 212
+export const NODE_H = 58
+const GAP = 12
+const PAD = 16
+const HEAD = 38
+const PER_COL = 8
 
-export interface LaneBox { id: string; y: number; w: number; h: number; index: number }
-export interface NodePos { id: string; x: number; y: number; absY: number; lane: number } // x, y relative to lane
+export interface GroupBox { id: string; x: number; y: number; w: number; h: number }
+export interface NodePos { id: string; x: number; y: number } // relative to its group
 
-/**
- * Layered layout: one horizontal swimlane per group, top to bottom in the order the groups are declared.
- * Inside a lane, components are ordered by the average position of their neighbours (a few sweeps),
- * which keeps most connections short and vertical.
- */
+/** Stack components in columns inside each group, then lay groups out left-to-right with dagre. */
 export function layout(arch: Architecture) {
-  const laneIndex = new Map(arch.groups.map((g, i) => [g.id, i]))
-  const laneOf = new Map(arch.components.map((c) => [c.id, laneIndex.get(c.group) ?? 0]))
-  const lanes: string[][] = arch.groups.map(() => [])
-  for (const c of arch.components) lanes[laneOf.get(c.id) ?? 0].push(c.id)
+  const members = new Map<string, string[]>()
+  for (const g of arch.groups) members.set(g.id, [])
+  for (const c of arch.components) members.get(c.group)?.push(c.id)
 
-  const neighbours = new Map<string, string[]>()
-  for (const c of arch.components) neighbours.set(c.id, [])
-  for (const e of arch.connections) {
-    neighbours.get(e.source)?.push(e.target)
-    neighbours.get(e.target)?.push(e.source)
-  }
-
-  const pos = new Map<string, number>()
-  const place = (ids: string[]) => ids.forEach((id, i) => pos.set(id, (i + 0.5) / ids.length))
-  lanes.forEach(place)
-  for (let sweep = 0; sweep < 4; sweep++) {
-    const order = lanes.map((_, i) => i)
-    if (sweep % 2 === 1) order.reverse()
-    for (const li of order) {
-      const ids = lanes[li]
-      const key = new Map(ids.map((id) => {
-        const others = (neighbours.get(id) ?? []).filter((n) => laneOf.get(n) !== li)
-        const bc = others.length ? others.reduce((a, n) => a + (pos.get(n) ?? 0.5), 0) / others.length : (pos.get(id) ?? 0.5)
-        return [id, bc]
-      }))
-      ids.sort((a, b) => (key.get(a)! - key.get(b)!) || 0)
-      place(ids)
-    }
-  }
-
-  const rowsFor = (n: number) => Math.max(1, Math.ceil(n / MAX_PER_ROW))
-  const perRowFor = (n: number) => Math.ceil(n / rowsFor(n))
-  const widest = Math.max(1, ...lanes.map((ids) => perRowFor(ids.length)))
-  const innerW = widest * NODE_W + (widest - 1) * GAP_X
-  const total = RAIL + LANE_PAD_X * 2 + innerW
-
-  const boxes: LaneBox[] = []
+  const sizes = new Map<string, { w: number; h: number; cols: number }>()
   const nodePos: NodePos[] = []
-  let y = 0
-  lanes.forEach((ids, li) => {
-    const rows = rowsFor(ids.length)
-    const perRow = perRowFor(ids.length)
-    const h = LANE_PAD_Y * 2 + rows * NODE_H + (rows - 1) * GAP_Y
-    boxes.push({ id: arch.groups[li].id, y, w: total, h, index: li })
+  for (const g of arch.groups) {
+    const ids = members.get(g.id) ?? []
+    const cols = Math.max(1, Math.ceil(ids.length / PER_COL))
+    const rows = Math.ceil(ids.length / cols)
+    const w = cols * NODE_W + (cols - 1) * GAP + PAD * 2
+    const h = HEAD + rows * NODE_H + Math.max(0, rows - 1) * GAP + PAD
+    sizes.set(g.id, { w, h, cols })
     ids.forEach((id, i) => {
-      const row = Math.floor(i / perRow)
-      const inRow = Math.min(perRow, ids.length - row * perRow)
-      const rowW = inRow * NODE_W + (inRow - 1) * GAP_X
-      const x = RAIL + LANE_PAD_X + (innerW - rowW) / 2 + (i % perRow) * (NODE_W + GAP_X)
-      const ny = LANE_PAD_Y + row * (NODE_H + GAP_Y)
-      nodePos.push({ id, x, y: ny, absY: y + ny, lane: li })
+      const col = Math.floor(i / rows)
+      const row = i % rows
+      nodePos.push({ id, x: PAD + col * (NODE_W + GAP), y: HEAD + row * (NODE_H + GAP) })
     })
-    y += h + LANE_GAP
+  }
+
+  const groupOf = new Map(arch.components.map((c) => [c.id, c.group]))
+  const g = new dagre.graphlib.Graph()
+  g.setGraph({ rankdir: 'LR', ranksep: 80, nodesep: 32, marginx: 20, marginy: 20 })
+  g.setDefaultEdgeLabel(() => ({}))
+  for (const grp of arch.groups) {
+    const s = sizes.get(grp.id)!
+    g.setNode(grp.id, { width: s.w, height: s.h })
+  }
+  const weights = new Map<string, number>()
+  for (const e of arch.connections) {
+    const a = groupOf.get(e.source), b = groupOf.get(e.target)
+    if (!a || !b || a === b) continue
+    const k = `${a}\u0000${b}`
+    weights.set(k, (weights.get(k) ?? 0) + 1)
+  }
+  for (const [k, weight] of weights) {
+    const [a, b] = k.split('\u0000')
+    if (!g.hasEdge(b, a)) g.setEdge(a, b, { weight }) // skip back-edges so dagre keeps a clean flow
+  }
+  dagre.layout(g)
+
+  const boxes: GroupBox[] = arch.groups.map((grp) => {
+    const n = g.node(grp.id)
+    const s = sizes.get(grp.id)!
+    return { id: grp.id, x: n.x - s.w / 2, y: n.y - s.h / 2, w: s.w, h: s.h }
   })
   return { boxes, nodePos }
 }

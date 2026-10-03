@@ -54,9 +54,9 @@ Run it again later: if `.arch/architecture.json` exists the agent diffs against 
 
 ## What the viewer does
 
-- Layered map: one swimlane per layer (people and UIs on top, data and external services at the bottom), components ordered to keep connections short, with an icon and color per kind: `user`, `ui`, `api`, `service`, `worker`, `cli`, `database`, `storage`, `external`, `config`.
-- **Flows**: a tour in a bottom dock. Pick a flow (or play them in order): its components light up, the rest dims, and the hops are **numbered 1, 2, 3…** on the map and listed in the dock, so you can read the sequence. Keyboard: `←` `→` to move, `Esc` to close.
-- Click a component for its role, its in and out connections and its source files (inspector panel).
+- Components grouped by layer, with an icon per kind: `user`, `ui`, `api`, `service`, `worker`, `cli`, `database`, `storage`, `external`, `config`.
+- **How it works**: a numbered tour. Each step highlights the components and animates the connections of one flow, everything else dims. Keyboard: `←` `→` to move, `Esc` to close.
+- Click a component for its role, its in and out connections and its source files.
 - Minimap, pan and zoom, light and dark mode (follows your system, toggle in the sidebar).
 - Styled with the [@crdg loniar theme](https://crdg-registry.vercel.app): Geist, one indigo accent, dense type scale.
 - One self-contained file: works offline, from `file://`, on any static host.
@@ -98,7 +98,7 @@ Keep the `<script id="arch-data" type="application/json">null</script>` line in 
 
 ## Known limits
 
-- Lanes are tall rows, so a map with 8+ layers needs vertical space; use the minimap, zoom, or the flows.
+- The layout reads left to right, one column per group chain. Maps with many groups get wide, so the overview text is small; use the tour or zoom.
 - The agent verifies connections by reading the code, it does not run your app. Treat the map as a good first draft and fix the JSON where it's wrong.
 
 ## License
