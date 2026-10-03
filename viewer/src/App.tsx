@@ -34,17 +34,20 @@ function CompNode({ data, selected }: NodeProps<Node<CompData>>) {
   const handle = '!h-1.5 !w-1.5 !border-0 !bg-transparent'
   return (
     <div
-      className={`node relative flex items-center gap-2.5 overflow-hidden rounded-lg bg-card pl-4 pr-2.5 ${dim ? 'node-dim' : ''}`}
+      className={`node relative flex items-center gap-2.5 rounded-lg px-3 pr-2.5 ${dim ? 'node-dim' : ''}`}
       style={{
         width: NODE_W, height: NODE_H,
-        boxShadow: lit ? '0 0 0 1.5px var(--primary), 0 8px 24px -8px var(--primary-line)' : 'var(--elevation-card)',
+        // no outline: the kind colour washes the card, the icon carries the saturated tone
+        background: `color-mix(in srgb, ${color} 7%, var(--card))`,
+        boxShadow: lit
+          ? '0 0 0 1.5px var(--primary), 0 8px 24px -8px var(--primary-line)'
+          : '0 1px 2px rgb(20 22 40 / 0.08), 0 6px 14px -8px rgb(20 22 40 / 0.22)',
       }}
     >
       <Handle id="l" type="target" position={Position.Left} className={handle} />
       <Handle id="r" type="source" position={Position.Right} className={handle} />
       <Handle id="t" type="target" position={Position.Top} className={handle} />
       <Handle id="b" type="source" position={Position.Bottom} className={handle} />
-      <span className="absolute inset-y-0 left-0 w-1" style={{ background: color }} />
       <Icon size={17} strokeWidth={2} style={{ color }} className="shrink-0" />
       <div className="min-w-0">
         <div className="truncate text-[13px] font-semibold leading-tight text-foreground">{comp.label}</div>
